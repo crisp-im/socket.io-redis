@@ -5,7 +5,6 @@
 
 var uid2 = require('uid2');
 var redis = require('redis').createClient;
-var msgpack = require('notepack.io');
 var Adapter = require('socket.io-adapter');
 var debug = require('debug')('socket.io-redis');
 
@@ -145,7 +144,7 @@ function adapter(uri, opts) {
       return debug('ignore unknown room %s', room);
     }
 
-    var args = msgpack.decode(msg);
+    var args = JSON.parse(msg);
     var packet;
 
     if (uid === args.shift()) return debug('ignore same uid');
@@ -405,7 +404,7 @@ function adapter(uri, opts) {
   Redis.prototype.broadcast = function(packet, opts, remote){
     packet.nsp = this.nsp.name;
     if (!(remote || (opts && opts.flags && opts.flags.local))) {
-      var msg = msgpack.encode([uid, packet, opts]);
+      var msg = JSON.stringify([uid, packet, opts]);
       var channel = this.channel;
       if (opts.rooms && opts.rooms.length === 1) {
         channel += opts.rooms[0] + '#';

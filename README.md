@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/socketio/socket.io-redis.svg?branch=master)](https://travis-ci.org/socketio/socket.io-redis)
 [![NPM version](https://badge.fury.io/js/socket.io-redis.svg)](http://badge.fury.io/js/socket.io-redis)
 
+**Notice: this is a patch by @crisp-im that replaces msgpack encoder/decoder w/ bare-metal NodeJS JSON encoder/decoder.**
+
 ## How to use
 
 ```js
