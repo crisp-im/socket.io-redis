@@ -6,7 +6,6 @@
 var uid2 = require('uid2');
 var redis = require('redis').createClient;
 var Adapter = require('socket.io-adapter');
-var debug = require('debug')('socket.io-redis');
 
 /**
  * Module exports.
@@ -49,7 +48,7 @@ function adapter(uri, opts) {
   var pub = opts.pubClient;
   var sub = opts.subClient;
   var prefix = opts.key || 'socket.io';
-  var requestsTimeout = opts.requestsTimeout || 1000;
+  var requestsTimeout = opts.requestsTimeout || 5000;
 
   // init clients if needed
   function createClient() {
@@ -136,18 +135,18 @@ function adapter(uri, opts) {
     channel = channel.toString();
 
     if (!this.channelMatches(channel, this.channel)) {
-      return debug('ignore different channel');
+      return;
     }
 
     var room = channel.slice(this.channel.length, -1);
     if (room !== '' && !this.rooms.hasOwnProperty(room)) {
-      return debug('ignore unknown room %s', room);
+      return;
     }
 
     var args = JSON.parse(msg);
     var packet;
 
-    if (uid === args.shift()) return debug('ignore same uid');
+    if (uid === args.shift()) return;
 
     packet = args[0];
 
@@ -156,7 +155,7 @@ function adapter(uri, opts) {
     }
 
     if (!packet || packet.nsp != this.nsp.name) {
-      return debug('ignore different namespace');
+      return;
     }
 
     args.push(true);
@@ -176,7 +175,7 @@ function adapter(uri, opts) {
     if (this.channelMatches(channel, this.responseChannel)) {
       return this.onresponse(channel, msg);
     } else if (!this.channelMatches(channel, this.requestChannel)) {
-      return debug('ignore different channel');
+      return;
     }
 
     var self = this;
@@ -188,8 +187,6 @@ function adapter(uri, opts) {
       self.emit('error', err);
       return;
     }
-
-    debug('received request %j', request);
 
     switch (request.type) {
 
@@ -291,9 +288,6 @@ function adapter(uri, opts) {
         });
 
         break;
-
-      default:
-        debug('ignoring unknown request type: %s', request.type);
     }
   };
 
@@ -317,11 +311,8 @@ function adapter(uri, opts) {
     var requestid = response.requestid;
 
     if (!requestid || !self.requests[requestid]) {
-      debug('ignoring unknown request');
       return;
     }
-
-    debug('received response %j', response);
 
     var request = self.requests[requestid];
 
@@ -386,9 +377,6 @@ function adapter(uri, opts) {
           delete self.requests[requestid];
         }
         break;
-
-      default:
-        debug('ignoring unknown request type: %s', request.type);
     }
   };
 
@@ -409,7 +397,6 @@ function adapter(uri, opts) {
       if (opts.rooms && opts.rooms.length === 1) {
         channel += opts.rooms[0] + '#';
       }
-      debug('publishing message to channel %s', channel);
       pub.publish(channel, msg);
     }
     Adapter.prototype.broadcast.call(this, packet, opts);
@@ -442,7 +429,6 @@ function adapter(uri, opts) {
       }
 
       numsub = parseInt(numsub[1], 10);
-      debug('waiting for %d responses to "clients" request', numsub);
 
       var request = JSON.stringify({
         requestid : requestid,
@@ -531,7 +517,6 @@ function adapter(uri, opts) {
       }
 
       numsub = parseInt(numsub[1], 10);
-      debug('waiting for %d responses to "allRooms" request', numsub);
 
       var request = JSON.stringify({
         requestid : requestid,
@@ -707,7 +692,6 @@ function adapter(uri, opts) {
       }
 
       numsub = parseInt(numsub[1], 10);
-      debug('waiting for %d responses to "customRequest" request', numsub);
 
       var request = JSON.stringify({
         requestid : requestid,
